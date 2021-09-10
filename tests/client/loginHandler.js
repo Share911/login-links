@@ -27,6 +27,7 @@ Tinytest.addAsync(
 
             Meteor.call('whoami', function(e, serverUserId) {
               test.equal(serverUserId, targetId)
+              console.log('loginWithToken failed here, whoami failed to recognize userId', { serverUserId, targetId })
 
               done()
             })

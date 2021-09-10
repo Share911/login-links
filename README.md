@@ -1,6 +1,6 @@
 Meteor package for sending links that automatically log in the user.
 
-Add this package to your Meteor app with: `meteor add loren:login-links`
+Add this package to your Meteor app with: `meteor add share911:login-links`
 
 The main use case is sending an email or sms to your user with a link to your app that contains an OTP (one-time password)* that automatically logs them in (so they don't have to enter their username/password or do OAuth):
 
@@ -203,9 +203,9 @@ ES6 without semicolons
 ### Testing
 
 ```bash
-git clone git@github.com:lorensr/login-links.git
+git clone git@github.com:share911/login-links.git
 cd login-links
-meteor --release 1.3.3.1 test-packages ./
+meteor --release 2.3.6 test-packages ./
 open localhost:3000
 ```
 
