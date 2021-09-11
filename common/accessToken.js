@@ -18,8 +18,13 @@ class AccessToken {
 
   getExpirationInSeconds() {
     // console.log('getExpirationInSeconds', this.expirationInSeconds, this.type, LoginLinks._accessTokenTypes, this.typeConfig)
-    return this.expirationInSeconds ||
-      this.typeConfig.expirationInSeconds ||
+    // NOTE: We use the Nullish coalescing operator ?? instead of || on purpose
+    // to allow usage of '0' when setting expiration period
+    //   const baz = 0 ?? 42;
+    //   console.log(baz);
+    //   expected output: 0
+    return this.expirationInSeconds ??
+      this.typeConfig.expirationInSeconds ??
       LoginLinks._defaultExpirationInSeconds
   }
 
@@ -29,7 +34,11 @@ class AccessToken {
   }
 
   get isExpired() {
-    return this.expiresAt < Date.now()
+    const now = Date.now()
+    const exp = this.expiresAt
+    const isExp = exp <= now
+    // console.log('[isExpired]', isExp, exp, now)
+    return isExp
   }
 
   get expirationReason() {
@@ -45,3 +54,8 @@ class AccessToken {
 }
 
 LoginLinks.AccessToken = AccessToken
+
+function expiresAt () {
+  let expirationInMilliseconds = this.getExpirationInSeconds() * 1000
+  return this.when.getTime() + expirationInMilliseconds
+}
