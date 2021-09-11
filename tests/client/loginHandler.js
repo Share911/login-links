@@ -2,6 +2,7 @@ Tinytest.addAsync(
   'login-links - loginWithToken works',
   function (test, done) {
     createUserAndToken(function(targetId, token) {
+      // console.log(targetId, token)
       test.isNull(Meteor.userId())
 
       LoginLinks.loginWithToken(token, function (e) {
@@ -21,16 +22,16 @@ Tinytest.addAsync(
 
           existingHook = Meteor.connection.onReconnect
           Meteor.connection.onReconnect = function() {
-            existingHook()
+            Meteor.setTimeout(function () {
+              existingHook()
 
-            test.equal(Meteor.userId(), targetId)
+              test.equal(Meteor.userId(), targetId)
 
-            Meteor.call('whoami', function(e, serverUserId) {
-              test.equal(serverUserId, targetId)
-              console.log('loginWithToken failed here, whoami failed to recognize userId', { serverUserId, targetId })
-
-              done()
-            })
+              Meteor.call('whoami', function(e, serverUserId) {
+                test.equal(serverUserId, targetId)
+                done()
+              })
+            }, 200)
           }
 
           Meteor.reconnect()
@@ -42,16 +43,16 @@ Tinytest.addAsync(
 
 Tinytest.addAsync(
   'login-links - per-token expiration works',
-  (test, done) => {
+  function (test, done) {
     createUserAndExpiringToken(function(targetId, token) {
       test.isNull(Meteor.userId())
-      setTimeout(() => {
+      Meteor.setTimeout(function () {
         LoginLinks.loginWithToken(token, function (e) {
           test.equal(e.error, "login-links/token-expired")
           test.isNull(Meteor.userId())
           done()
         })
-      }, 2000)
+      }, 1000)
     })
   }
 )

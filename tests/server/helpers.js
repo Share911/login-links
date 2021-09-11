@@ -5,7 +5,7 @@ Meteor.methods({
   },
 
   whoami() {
-    l('whoami: ', Meteor.userId())
+    // l('whoami: ', Meteor.userId())
     return Meteor.userId()
   },
 
