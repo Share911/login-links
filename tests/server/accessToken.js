@@ -1,4 +1,7 @@
-const when = new Date(Date.now() - 1000 * 60 * 60 * 24 * 365)
+const yearInMS = 1000 * 60 * 60 * 24 * 365
+const now = Date.now()
+const when = new Date(now - yearInMS)
+// console.log({ yearInMS, now, nowDate: new Date(now), when })
 
 Tinytest.add(
   'login-links - setDefaultExpirationInSeconds',
@@ -33,29 +36,26 @@ Tinytest.add(
   }
 )
 
-// TODO this one is flaky, should succeed after hitting rerun button
 Tinytest.addAsync(
   'login-links - old tokens are cleared',
   function (test, done) {
+    const email = 'clear-tokens@example.com'
+    const query = { 'emails.address': email }
     try {
-      Accounts.createUser({email: 'a@b', password: 'a'})
+      Accounts.createUser({email, password: 'a'})
     } catch(e) { }
 
-    let user = Meteor.users.findOne()
-    LoginLinks.generateAccessToken(user._id, {expirationInSeconds: 0})
-    Meteor.setTimeout(function() {
+    const preUser = Meteor.users.findOne(query)
+    LoginLinks.generateAccessToken(preUser._id, { expirationInSeconds: 0 })
+    Meteor.setTimeout(function () {
       LoginLinks._expireTokens()
-      Meteor.setTimeout(function(){
-        console.log('user.services', user.services)
-        console.log('user', user)
-        console.log('Meteor.users.findOne(user._id)', Meteor.users.findOne(user._id))
-        let beforeCount = user.services.accessTokens ? user.services.accessTokens.tokens.length : 0
-        const afterUser = Meteor.users.findOne(user._id)
-        let afterCount = afterUser.services.accessTokens.tokens.length
-        test.equal(beforeCount, afterCount) // one added, one cleaned up
-        done()
-      }, 2000)
-
-    }, 3000)
+      const postUser = Meteor.users.findOne(query)
+      // console.log('preUser.services', JSON.stringify(preUser.services, null, '\t'))
+      // console.log('postUser.services', JSON.stringify(postUser.services, null, '\t'))
+      const beforeCount = 0
+      const afterCount = postUser?.services?.accessTokens?.tokens.length || 0
+      test.equal(afterCount, beforeCount) // one added, one cleaned up
+      done()
+    }, 100)
   }
 )

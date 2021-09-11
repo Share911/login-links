@@ -1,10 +1,18 @@
 class AccessToken {
 
   constructor(token) {
-    if (!token.hashedToken || !token.when)
+    if (!token.hashedToken) {
       throw new Meteor.Error('login-links error: access token is missing a field')
+    }
 
-    _.extend(this, token)
+    if (!token.when) {
+      this.when = new Date()
+    }
+
+    this.expirationInSeconds = token.expirationInSeconds ?? calculateExpirationInSeconds(token)
+    this.expiresAt = calculateExpiresAt(token)
+
+    Object.assign(this, token)
   }
 
   get typeConfig() {
@@ -17,25 +25,20 @@ class AccessToken {
   }
 
   getExpirationInSeconds() {
-    // console.log('getExpirationInSeconds', this.expirationInSeconds, this.type, LoginLinks._accessTokenTypes, this.typeConfig)
-    // NOTE: We use the Nullish coalescing operator ?? instead of || on purpose
-    // to allow usage of '0' when setting expiration period
-    //   const baz = 0 ?? 42;
-    //   console.log(baz);
-    //   expected output: 0
-    return this.expirationInSeconds ??
-      this.typeConfig.expirationInSeconds ??
-      LoginLinks._defaultExpirationInSeconds
+    return calculateExpirationInSeconds(this)
   }
 
-  get expiresAt() {
-    let expirationInMilliseconds = this.getExpirationInSeconds() * 1000
-    return this.when.getTime() + expirationInMilliseconds
-  }
+  // get expiresAt() {
+  //   if (this.expiresAt) {
+  //     return this.expiresAt
+  //   }
+  //   const expirationInMilliseconds = this.getExpirationInSeconds() * 1000
+  //   return this.when.getTime() + expirationInMilliseconds
+  // }
 
   get isExpired() {
     const now = Date.now()
-    const exp = this.expiresAt
+    const exp = calculateExpiresAt(this)
     const isExp = exp <= now
     // console.log('[isExpired]', isExp, exp, now)
     return isExp
@@ -47,7 +50,7 @@ class AccessToken {
           + "') has a "
           + this.getExpirationInSeconds()
           + '-second expiry, and expired at '
-          + new Date(this.expiresAt)
+          + calculateExpiresAt(this)
     return reason
   }
 
@@ -55,7 +58,26 @@ class AccessToken {
 
 LoginLinks.AccessToken = AccessToken
 
-function expiresAt () {
-  let expirationInMilliseconds = this.getExpirationInSeconds() * 1000
-  return this.when.getTime() + expirationInMilliseconds
+function calculateExpiresAt (token) {
+  if (token.expiresAt) {
+    return token.expiresAt
+  }
+  const expirationInSeconds = calculateExpirationInSeconds(token)
+  const expirationInMilliseconds = expirationInSeconds * 1000
+  const tExpiresAt = token.when.getTime() + expirationInMilliseconds
+  return new Date(tExpiresAt)
+}
+
+function calculateExpirationInSeconds (token) {
+  let expiration = token?.expirationInSeconds
+  if (typeof expiration === 'undefined' || expiration === null) {
+    if (token.type) {
+      const config = LoginLinks._accessTokenTypes[token.type]
+      expiration = config?.expirationInSeconds
+    }
+  }
+  if (typeof expiration === 'undefined' || expiration === null) {
+    expiration = LoginLinks._defaultExpirationInSeconds
+  }
+  return expiration
 }

@@ -27,12 +27,15 @@ _.extend(LoginLinks, {
     stampedToken = Accounts._generateStampedLoginToken()
     hashStampedToken = Accounts._hashStampedToken(stampedToken)
 
-    if (opts)
-      _.extend(hashStampedToken, opts)
+    if (opts) {
+      Object.assign(hashStampedToken, opts)
+    }
+
+    const accessToken = new LoginLinks.AccessToken(hashStampedToken)
 
     Meteor.users.update(user._id, {
       $push: {
-        'services.accessTokens.tokens': hashStampedToken
+        'services.accessTokens.tokens': accessToken
       }
     })
 
